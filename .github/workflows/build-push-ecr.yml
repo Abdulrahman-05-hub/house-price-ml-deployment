@@ -1,0 +1,39 @@
+
+name: Build and Push House Price API to ECR Public
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::882166533403:role/GitHubActions-HousePrice-ECR
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR Public
+        run: |
+          aws ecr-public get-login-password --region us-east-1 \
+            | docker login --username AWS --password-stdin public.ecr.aws
+
+      - name: Build Docker image
+        run: |
+          docker build -t public.ecr.aws/c9m5s2z9/house-price-ml-api:latest .
+
+      - name: Push Docker image
+        run: |
+          docker push public.ecr.aws/c9m5s2z9/house-price-ml-api:latest
